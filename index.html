@@ -183,6 +183,7 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var
 // ⚙️  교수님 설정 영역 — 배포 전 반드시 수정하세요
 // ════════════════════════════════════════════════════════════════
 const EXAM_CONFIG = {
+  testCode:    '0000',                       // ← 사전 테스트 코드 (항상 유효)
   mainCode:    '2580',                       // ← 시험 중 접속 코드 (변경 필요)
   recoveryCode:'8651',                       // ← 복구 코드 (40분 후 자동전환, 수정 불필요)
   startISO:    '2026-04-22T09:00:00',        // ← 시험 시작 시각 (변경 필요)
@@ -285,7 +286,7 @@ const ESSAY_DATA = [
 ];
 
 // ── 상태 ────────────────────────────────────────────────────────
-let sid='', sname='', isRecov=false, warnCnt=0;
+let sid='', sname='', isRecov=false, isTest=false, warnCnt=0;
 let timerSec=0, timerIv=null;
 let lockSec=60, lockIv=null, locked=false;
 let ans={mc:{}, iix:[], sp:null, essay:{}};
@@ -312,9 +313,11 @@ function getPhase(){
   return 'recovery';
 }
 function isValidCode(code){
-  // 8651(복구/관리자 코드)은 시간에 관계없이 항상 유효
+  // 0000(테스트 코드)은 항상 유효
+  if(code===EXAM_CONFIG.testCode) return true;
+  // 8651(복구/관리자 코드)은 항상 유효
   if(code===EXAM_CONFIG.recoveryCode) return true;
-  // 일반 접속코드(2580)는 시험 시간 중에만 유효
+  // 2580은 시험 시간 중에만 유효
   const p=getPhase();
   if(p==='before') return false;
   if(p==='exam')   return code===EXAM_CONFIG.mainCode;
@@ -342,8 +345,13 @@ function tryLogin(){
       $('login-err').textContent='접속 코드가 올바르지 않습니다. 다시 확인하세요.';
     return;
   }
-  sid=id; sname=nm; isRecov=(p==='recovery');
-  if(isRecov){$('recov-bar').style.display='block';loadStorage();}
+  isTest=(cd===EXAM_CONFIG.testCode);
+  sid=id; sname=nm; isRecov=(p==='recovery')||isTest;
+  if(isTest){
+    $('recov-bar').style.display='block';
+    $('recov-bar').style.background='#7c3aed';
+    $('recov-bar').textContent='🧪 테스트 모드 — 실제 시험이 아닙니다. 제출해도 점수에 반영되지 않습니다.';
+  } else if(isRecov){$('recov-bar').style.display='block';loadStorage();}
   $('hdr-info').textContent=`${sname}  |  학번: ${sid}`;
   showScreen('s-exam');
   buildExam();
@@ -460,7 +468,7 @@ function collectData(){
   const essay={};
   ESSAY_DATA.forEach(q=>{const t=$('ea'+q.n);essay[q.n]=t?t.value:(ans.essay[q.n]||'');});
   return {sid,sname,warnCnt,ans:{mc:ans.mc,iix:ans.iix,sp:ans.sp,essay},
-          savedAt:new Date().toLocaleString('ko-KR'),_recovery:isRecov};
+          savedAt:new Date().toLocaleString('ko-KR'),_recovery:isRecov,_test:isTest};
 }
 function autoSave(){
   const d=collectData();

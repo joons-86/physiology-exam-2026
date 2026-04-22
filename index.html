@@ -553,7 +553,7 @@ async function doSubmit(){
   let ok=false;
   try{
     await fetch(EXAM_CONFIG.scriptURL,{method:'POST',mode:'no-cors',
-      headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      headers:{'Content-Type':'text/plain'},body:JSON.stringify(data)});
     ok=true;
   }catch(e){}
   showDone(ok,data);

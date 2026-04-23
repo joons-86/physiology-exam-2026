@@ -153,7 +153,7 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var
 
 <!-- ── 시험 ───────────────────────────────────────────────────── -->
 <div id="s-exam" class="screen">
-  <div class="recov-bar" id="recov-bar">⚠️ 복구 제출 모드 — 저장된 답안을 확인하고 제출하세요 (코드 8651)</div>
+  <div class="recov-bar" id="recov-bar">⚠️ 복구 제출 모드 — 저장된 답안을 확인하고 제출하세요</div>
   <div class="exam-hdr">
     <div>
       <div class="hdr-title">운동생리학 중간고사</div>
@@ -349,7 +349,7 @@ function isValidCode(code){
 (function initLoginUI(){
   const p=getPhase();
   const badge=$('phase-badge');
-  if(p==='before'){badge.className='phase-badge pb-before';badge.textContent='시험 시작 전 (관리자: 8651)';}
+  if(p==='before'){badge.className='phase-badge pb-before';badge.textContent='시험 시작 전';}
   else if(p==='exam'){badge.className='phase-badge pb-exam';badge.textContent='● 진행 중';}
   else{badge.className='phase-badge pb-recov';badge.textContent='복구 제출 모드';}
 })();
@@ -361,7 +361,6 @@ function tryLogin(){
   const cd=$('inp-code').value.trim();
   if(!id||!nm){$('login-err').textContent='학번과 이름을 모두 입력해주세요.';return;}
   const p=getPhase();
-  if(p==='before'){$('login-err').textContent='시험이 아직 시작되지 않았습니다. 잠시 후 다시 시도하세요.';return;}
   if(!isValidCode(cd)){
       $('login-err').textContent='접속 코드가 올바르지 않습니다. 다시 확인하세요.';
     return;
@@ -624,7 +623,7 @@ function showDone(ok,data){
   $('done-ttl').textContent=ok?'제출 완료':'로컬 저장 완료';
   $('done-msg').innerHTML=ok
     ?`<b>${sname}</b> 님의 답안이 성공적으로 전송되었습니다.<br>창을 닫고 교수님의 안내를 기다려주세요.<br><br><span style="font-size:12px;color:#94a3b8">이탈 감지 횟수: ${warnCnt}회</span>`
-    :`네트워크 오류로 전송에 실패했으나<br>답안이 이 기기에 저장되었습니다.<br>교수님께 알리고 <b>복구 코드(8651)</b>로 재접속 후 제출하세요.`;
+    :`네트워크 오류로 전송에 실패했으나<br>답안이 이 기기에 저장되었습니다.<br>교수님께 알리고 복구 코드로 재접속 후 제출하세요.`;
   if(!ok){$('done-warn').style.display='block';$('done-warn').textContent='⚠️ 반드시 교수님께 이 상황을 알리세요.';}
   showScreen('s-done');
 }

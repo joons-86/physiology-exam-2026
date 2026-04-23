@@ -168,6 +168,27 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var
   <div class="exam-body" id="exam-body"></div>
 </div>
 
+
+<!-- ── 연결 테스트 화면 ─────────────────────────────────────────── -->
+<div id="s-test" class="screen" style="min-height:100vh;display:none;align-items:center;justify-content:center;background:linear-gradient(135deg,#4c1d95 0%,#7c3aed 100%)">
+  <div style="background:#fff;border-radius:20px;padding:40px 32px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="font-size:56px;margin-bottom:16px">🧪</div>
+    <div style="font-size:18px;font-weight:800;color:#7c3aed;margin-bottom:8px">연결 테스트 모드</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:24px;line-height:1.8">
+      시험 문제는 표시되지 않습니다.<br>
+      아래 버튼을 눌러 연결 상태만 확인하세요.
+    </div>
+    <div style="background:#f5f3ff;border-radius:10px;padding:14px;margin-bottom:24px;font-size:13px">
+      <div style="color:#64748b;margin-bottom:4px">접속 정보</div>
+      <div style="font-weight:800;font-size:15px"><span id="test-name">—</span> &nbsp;|&nbsp; <span id="test-id">—</span></div>
+    </div>
+    <button onclick="submitTest()" id="test-btn"
+      style="width:100%;background:#7c3aed;color:#fff;border:none;border-radius:11px;padding:13px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer">
+      📡 연결 테스트 제출
+    </button>
+    <div id="test-result" style="margin-top:16px;font-size:13px;min-height:20px"></div>
+  </div>
+</div>
 <!-- ── 완료 ───────────────────────────────────────────────────── -->
 <div id="s-done" class="screen">
   <div class="done-wrap">
@@ -297,7 +318,7 @@ const $=id=>document.getElementById(id);
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('on');if(s.style.display==='flex')s.style.display='none'});
   const el=$(id);
-  if(id==='s-done'){el.style.display='flex';el.classList.add('on');}
+  if(id==='s-done'||id==='s-test'){el.style.display='flex';el.classList.add('on');}
   else el.classList.add('on');
 }
 
@@ -346,17 +367,22 @@ function tryLogin(){
     return;
   }
   isTest=(cd===EXAM_CONFIG.testCode);
-  sid=id; sname=nm; isRecov=(p==='recovery')||isTest;
+  sid=id; sname=nm; isRecov=(p==='recovery');
+
+  // 테스트 모드 → 연결확인 화면만 (문제 노출 없음)
   if(isTest){
-    $('recov-bar').style.display='block';
-    $('recov-bar').style.background='#7c3aed';
-    $('recov-bar').textContent='🧪 테스트 모드 — 실제 시험이 아닙니다. 제출해도 점수에 반영되지 않습니다.';
-  } else if(isRecov){$('recov-bar').style.display='block';loadStorage();}
+    showScreen('s-test');
+    document.getElementById('test-name').textContent = sname;
+    document.getElementById('test-id').textContent   = sid;
+    return;
+  }
+
+  if(isRecov){$('recov-bar').style.display='block';loadStorage();}
   $('hdr-info').textContent=`${sname}  |  학번: ${sid}`;
   showScreen('s-exam');
   buildExam();
   startTimer();
-  setTimeout(()=>{initGuard();},600); // 로그인 직후 blur 방지
+  setTimeout(()=>{initGuard();},600);
 }
 
 // ── 시험 본문 생성 ─────────────────────────────────────────────────
@@ -552,6 +578,27 @@ function confirmSubmit(){
   if(confirm(msg)){doSubmit();}
   else{resumeGuard();}
 }
+
+async function submitTest(){
+  const btn = document.getElementById('test-btn');
+  const res = document.getElementById('test-result');
+  btn.disabled = true;
+  btn.textContent = '전송 중...';
+  const payload = {sid, sname, warnCnt:0, _test:true, _recovery:false,
+    ans:{mc:{},essay:{}}, savedAt:new Date().toLocaleString('ko-KR')};
+  try {
+    await fetch(EXAM_CONFIG.scriptURL,{method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+    btn.style.background='#166534';
+    btn.textContent='✅ 연결 성공!';
+    res.innerHTML='<span style="color:#166534;font-weight:700">스프레드시트에 기록되었습니다.<br>교수님 확인 후 실제 코드를 받으세요.</span>';
+  } catch(e) {
+    btn.disabled=false;
+    btn.textContent='📡 연결 테스트 제출';
+    res.innerHTML='<span style="color:#c00">연결 실패 — 인터넷 확인 후 다시 시도</span>';
+  }
+}
+
 async function doSubmit(){
   clearInterval(timerIv);
   pauseGuard();

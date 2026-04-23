@@ -384,6 +384,7 @@ function tryLogin(){
   showScreen('s-exam');
   buildExam();
   startTimer();
+  startAutoSheetSave(); // 30초마다 Sheets 자동저장 시작
   setTimeout(()=>{initGuard();},600);
 }
 
@@ -502,6 +503,21 @@ function autoSave(){
   const d=collectData();
   localStorage.setItem('physio26_'+sid,JSON.stringify(d));
 }
+
+// 30초마다 Sheets에 중간저장 (제출 안 해도 보존)
+let autoSaveIv=null;
+function startAutoSheetSave(){
+  if(autoSaveIv) return;
+  autoSaveIv=setInterval(async()=>{
+    if(!sid) return;
+    const d=collectData();
+    d._autosave=true;
+    try{
+      await fetch(EXAM_CONFIG.scriptURL,{method:'POST',mode:'no-cors',
+        headers:{'Content-Type':'text/plain'},body:JSON.stringify(d)});
+    }catch(e){}
+  },30000); // 30초
+}
 function loadStorage(){
   const keys=Object.keys(localStorage).filter(k=>k.startsWith('physio26_'));
   if(!keys.length) return;
@@ -573,9 +589,12 @@ function releaseLock(){
 // ── 제출 ─────────────────────────────────────────────────────────
 function confirmSubmit(){
   pauseGuard();
-  const unan=Object.keys(MC_ANS).filter(k=>!ans.mc[parseInt(k)]).length;
+  // 실제 미답변 수 계산 (선택된 값 기준)
+  const answered=Object.keys(ans.mc).filter(k=>ans.mc[k]!==undefined&&ans.mc[k]!==null&&ans.mc[k]!=='').length;
+  const total=Object.keys(MC_ANS).length;
+  const unan=total-answered;
   const msg=unan>0
-    ?`객관식 ${unan}문항이 미답변 상태입니다.\n그래도 최종 제출하시겠습니까?`
+    ?`객관식 ${unan}문항이 아직 선택되지 않았습니다.\n그래도 최종 제출하시겠습니까?`
     :'최종 제출하시겠습니까?\n제출 후에는 수정이 불가능합니다.';
   if(confirm(msg)){doSubmit();}
   else{resumeGuard();}
